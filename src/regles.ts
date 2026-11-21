@@ -1,7 +1,7 @@
 // Règles du jeu, 100 % pures : aucun affichage, aucun stockage.
 // Le hasard passe par un paramètre `alea` (par défaut Math.random) pour pouvoir tester.
 import { POKEDEX } from './pokemon';
-import type { Buisson, EspecePokemon, Oeuf, Palier, Rencontre, ResultatLancer } from './types';
+import type { Buisson, EspecePokemon, Oeuf, Palier, Rencontre, ResultatLancer, Soins } from './types';
 
 export type Alea = () => number;
 
@@ -191,8 +191,8 @@ export function avancerOeufs(oeufs: Oeuf[], pas: number): { restants: Oeuf[]; ec
 // ---------- Capture ----------
 
 /** Chance de capture d'un lancer (0..1). 255 -> 90 %, 45 -> ~28 %, 3 -> ~16 %. */
-export function chanceCapture(e: EspecePokemon): number {
-  return 0.15 + 0.75 * (e.captureRate / 255);
+export function chanceCapture(e: EspecePokemon, bonus = 0): number {
+  return Math.min(0.95, 0.15 + 0.75 * (e.captureRate / 255) + bonus);
 }
 
 /** Chance que le Pokémon s'enfuie après un lancer raté. */
@@ -200,8 +200,8 @@ export function chanceFuite(e: EspecePokemon): number {
   return 0.05 + 0.15 * (1 - e.captureRate / 255);
 }
 
-export function resultatLancer(e: EspecePokemon, alea: Alea = Math.random): ResultatLancer {
-  if (alea() < chanceCapture(e)) return 'capture';
+export function resultatLancer(e: EspecePokemon, bonus = 0, alea: Alea = Math.random): ResultatLancer {
+  if (alea() < chanceCapture(e, bonus)) return 'capture';
   if (alea() < chanceFuite(e)) return 'fuite';
   return 'echappe';
 }
@@ -232,4 +232,69 @@ export function progressionNiveau(xp: number): number {
 
 export function nouvelUid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ---------- Soins du compagnon (tamagotchi) ----------
+// Aucune baisse avec le temps : les jauges ne bougent qu'en marchant ou en s'occupant du compagnon.
+// Une jauge basse ne bloque jamais rien : elle réduit seulement les bonus.
+
+
+export const SOINS_DEFAUT: Soins = { satiete: 80, bonheur: 50, energie: 100 };
+
+const borne = (v: number) => Math.max(0, Math.min(100, v));
+
+export function soinsDe(p: { soins?: Soins }): Soins {
+  return p.soins ?? SOINS_DEFAUT;
+}
+
+/** Marcher : creuse l'appétit (-1 / 50 pas), fatigue (-1 / 40 pas), rend heureux (+1 / 100 pas) sauf si affamé ou épuisé.
+ * Calcul par tranches de 100 pas pour qu'un gros rattrapage (app fermée) donne le même résultat que la marche en direct. */
+export function soinsApresMarche(s: Soins, pas: number): Soins {
+  let r = s;
+  let reste = Math.max(0, pas);
+  while (reste > 0) {
+    const t = Math.min(100, reste);
+    reste -= t;
+    const malheureux = r.satiete < 20 || r.energie < 20;
+    r = {
+      satiete: borne(r.satiete - t / 50),
+      energie: borne(r.energie - t / 40),
+      bonheur: borne(r.bonheur + (malheureux ? -t / 100 : t / 100)),
+    };
+  }
+  return r;
+}
+
+export function nourrir(s: Soins): Soins {
+  return { ...s, satiete: borne(s.satiete + 25), bonheur: borne(s.bonheur + (s.satiete < 50 ? 4 : 1)) };
+}
+
+export function caresser(s: Soins): Soins {
+  return { ...s, bonheur: borne(s.bonheur + 2) };
+}
+
+export function pause(s: Soins): Soins {
+  return { ...s, energie: borne(s.energie + 35) };
+}
+
+/** Multiplicateur d'XP du compagnon : x0.5 (triste) à x1.5 (aux anges), divisé par 2 s'il a faim ou est épuisé. */
+export function multXp(s: Soins): number {
+  let m = 0.5 + s.bonheur / 100;
+  if (s.satiete < 20) m /= 2;
+  if (s.energie < 20) m /= 2;
+  return m;
+}
+
+/** Compagnon très heureux : il t'aide, +5 points de chance de capture. */
+export function bonusCaptureCompagnon(s: Soins): number {
+  return s.bonheur >= 80 && s.satiete >= 20 && s.energie >= 20 ? 0.05 : 0;
+}
+
+export function humeur(s: Soins): { texte: string; icone: string } {
+  if (s.satiete < 20) return { texte: 'a faim', icone: '🍽️' };
+  if (s.energie < 20) return { texte: 'est épuisé', icone: '😴' };
+  if (s.bonheur >= 80) return { texte: 'est aux anges', icone: '💖' };
+  if (s.bonheur >= 50) return { texte: 'est content', icone: '🙂' };
+  if (s.bonheur >= 25) return { texte: 'est un peu triste', icone: '😕' };
+  return { texte: 'boude', icone: '😞' };
 }

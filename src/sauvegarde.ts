@@ -19,6 +19,7 @@ export function sauvegardeVierge(): Sauvegarde {
     oeufs: [],
     aAnnoncer: [],
     stats: { fouilles: 0, captures: 0, fuites: 0, shinies: 0, eclosions: 0, meilleureChaine: 0 },
+    reglages: { styleSprite: 'defaut' },
     debug: { forcerShiny: false, meteoForcee: null, lieuForce: null, frequentationForcee: null },
   };
 }
@@ -34,6 +35,7 @@ export function normaliser(brut: unknown): Sauvegarde {
     version: 2,
     stats: { ...base.stats, ...(s.stats ?? {}) },
     debug: { ...base.debug, ...(s.debug ?? {}) },
+    reglages: { ...base.reglages, ...(s.reglages ?? {}) },
     collection: Array.isArray(s.collection) ? s.collection : [],
     vus: s.vus && typeof s.vus === 'object' ? s.vus : {},
     oeufs: Array.isArray(s.oeufs) ? s.oeufs : [],

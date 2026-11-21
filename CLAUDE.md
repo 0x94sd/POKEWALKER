@@ -32,7 +32,7 @@ Vision : découverte, liberté. **Zéro microtransaction, aucune limite artifici
 | `src/exportSauvegarde.ts` | Export/import texte `PKW1.` + base64(JSON UTF-8) |
 | `src/hooks/useJeu.ts` | Branche le reducer sur React + sauvegarde auto (debounce 500 ms) |
 | `src/hooks/usePodometre.ts` | Pas en direct + rattrapage des pas faits app fermée (historique iOS 7 j) |
-| `src/components/` | Écrans (Starter, Compagnon, Herbes, Collection, Debug) + briques (Sprite, Jauge, Bouton, Onglets, BarrePodometre) |
+| `src/components/` | Écrans (Starter, Compagnon, Herbes, Collection, Debug = onglet Réglages) + briques (Sprite + `StyleSpriteContext`, Jauge, Bouton, Onglets, BarrePodometre, BuissonRadar, ListeOeufs, AnnonceEclosion, BandeauContexte, ChoixChips, CarteSauvegarde, CarteStyleSprite) |
 
 Règle : logique de jeu pure dans `src/` (testable sans React), affichage dans `src/components/`.
 
@@ -48,7 +48,10 @@ Règle : logique de jeu pure dans `src/` (testable sans React), affichage dans `
 - Nuit (21h-6h, hors ligne) : Spectre/Ténèbres/Poison x3
 - Lieux OSM : cimetière Spectre, électrique Électrik, eau Eau, forêt Insecte/Plante, parc Plante/Normal, industrie Poison/Acier, roche Roche/Sol, campagne Normal/Plante, sport Combat, culte Psy, pompiers Feu, glace Glace, aéroport Vol. Espèce favorisée x5 (cumulable avec météo)
 - Fréquentation (bâtiments à 300 m) : <5 isolé rares x2, <40 calme x1.4, sinon x1
-- Compagnon : +1 XP / 10 pas, +25 XP par capture. Niveau n = 10·(n-1)² XP cumulée, max 100.
+- Compagnon : +1 XP / 10 pas, +25 XP par capture, x multXp. Niveau n = 10·(n-1)² XP cumulée, max 100.
+- Jauges (par Pokémon, `soins`, 0-100, défaut 80/50/100) : **ne baissent jamais avec le temps**, seulement en marchant (satiété -1/50 pas, énergie -1/40 pas, bonheur +1/100 pas ou -1/100 si satiété ou énergie <20), calcul par tranches de 100 pas. Nourrir +25 satiété, Pause +35 énergie, Caresse (tap sprite) +2 bonheur : illimités
+- Effets (jamais bloquants) : XP x(0.5 + bonheur/100), /2 si affamé, /2 si épuisé ; bonheur ≥80 (et pas affamé/épuisé) = +5 pts de capture
+- Styles de sprites (`STYLES_SPRITE`) : Classique, Rouge/Bleu (pas de shiny -> fallback Classique), Cristal, Émeraude, Platine, Noir/Blanc animé, Showdown animé, HOME, Artwork
 
 ## Vérifs avant de rendre la main
 ```
@@ -56,7 +59,7 @@ npx tsc --noEmit
 EXPO_OFFLINE=1 CI=1 npx expo export --platform ios --output-dir /tmp/export   # vérifie que Metro bundle
 ```
 
-## État (lot 3, nov. 2026)
+## État (lot 4, nov. 2026)
 Fait :
 - Projet Expo SDK 58 recréé (le dépôt GitHub était vide), découpé en composants
 - Podomètre en direct + rattrapage au retour dans l'app, sauvegarde locale auto
@@ -76,7 +79,11 @@ Lot 3 :
 - Localisation premier plan seulement (« Toujours » = arrière-plan impossible dans Expo Go iOS, nécessiterait un dev build)
 - Non testé en réel depuis l'env Claude (Open-Meteo / Overpass bloqués) : à valider sur l'iPhone
 
+Lot 4 :
+- Jauges satiété / bonheur / énergie, humeur, nourrir / pause / caresser (cœurs animés), bonus XP et capture
+- Onglet Debug renommé Réglages : style de sprites (9 styles, aperçu avec le compagnon) + export/import + debug
+
 ## Roadmap
-**Lot 4** : jauges tamagotchi (faim / bonheur / énergie), interactions compagnon, choix du style de sprites par génération + sprites animés Showdown
-**Lot 5+** : niveaux/IV/stats/attaques façon jeux principaux, combats (`@smogon/calc` + `@pkmn/data`, MIT à vérifier), arènes Kanto, Conseil 4, échanges par QR code
+**Lot 5** : niveaux sauvages + IV + stats calculées, attaques par niveau (données PokéAPI hors ligne), évolutions par niveau
+**Lot 6+** : niveaux/IV/stats/attaques façon jeux principaux, combats (`@smogon/calc` + `@pkmn/data`, MIT à vérifier), arènes Kanto, Conseil 4, échanges par QR code
 **Hors Expo Go** (dev build nécessaire, à valider avant) : widget écran d'accueil / verrouillage

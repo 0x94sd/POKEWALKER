@@ -53,7 +53,11 @@ export type PokemonCapture = {
   captureLe: number; // timestamp ms
   /** XP gagnée en tant que compagnon. */
   xp: number;
+  /** Jauges tamagotchi (0..100). Absent = valeurs par défaut. */
+  soins?: Soins;
 };
+
+export type Soins = { satiete: number; bonheur: number; energie: number };
 
 export type ResultatLancer = 'capture' | 'echappe' | 'fuite';
 
@@ -86,6 +90,9 @@ export type Sauvegarde = {
     shinies: number;
     eclosions: number;
     meilleureChaine: number;
+  };
+  reglages: {
+    styleSprite: string;
   };
   debug: {
     forcerShiny: boolean;

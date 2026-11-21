@@ -1,10 +1,12 @@
-// Outils de test sans marcher.
+// Onglet Réglages : style de sprites, sauvegarde, et outils de test sans marcher (debug).
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { INFOS_PALIER, PALIERS, especesDuPalier } from '../regles';
 import type { Sauvegarde } from '../types';
 import { C, R } from '../theme';
 import { Bouton } from './Bouton';
 import { CarteSauvegarde } from './CarteSauvegarde';
+import { CarteStyleSprite } from './CarteStyleSprite';
+import type { StyleSprite } from '../pokemon';
 import { ChoixChips } from './ChoixChips';
 import { FREQUENTATIONS, LIEUX, METEOS } from '../environnement';
 
@@ -23,6 +25,8 @@ type Props = {
   onBasculerShiny: () => void;
   onImporter: (s: Sauvegarde) => void;
   onForcer: (champ: ChampForcage, valeur: string | null) => void;
+  onChoisirStyle: (st: StyleSprite) => void;
+  especeApercu: number;
   onReinitialiser: () => void;
 };
 
@@ -31,6 +35,10 @@ export function EcranDebug(p: Props) {
   const occupe = !!s.rencontreEnCours || !!s.radar;
   return (
     <ScrollView contentContainerStyle={styles.page}>
+      <CarteStyleSprite actuel={s.reglages.styleSprite} especeApercu={p.especeApercu} onChoisir={p.onChoisirStyle} />
+      <CarteSauvegarde s={s} onImporter={p.onImporter} />
+
+      <Text style={styles.section}>🛠️ Debug</Text>
       <View style={styles.carte}>
         <Text style={styles.titre}>Pas bonus</Text>
         <View style={styles.rangee}>
@@ -74,8 +82,6 @@ export function EcranDebug(p: Props) {
         <ChoixChips options={OPT_FREQ} valeur={s.debug.frequentationForcee} onChange={(v) => p.onForcer('frequentationForcee', v)} />
       </View>
 
-      <CarteSauvegarde s={s} onImporter={p.onImporter} />
-
       <View style={styles.carte}>
         <Text style={styles.titre}>Paliers de rareté</Text>
         {PALIERS.map((p) => (
@@ -116,4 +122,5 @@ const styles = StyleSheet.create({
   ligne: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   txt: { fontSize: 15, color: C.texte },
   petit: { fontSize: 12, color: C.texteDoux },
+  section: { fontSize: 15, fontWeight: '800', color: C.texteDoux, marginTop: 6, marginLeft: 4 },
 });

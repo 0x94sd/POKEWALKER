@@ -7,7 +7,7 @@ const ONGLETS: { id: Onglet; icone: string; nom: string }[] = [
   { id: 'compagnon', icone: '🏠', nom: 'Compagnon' },
   { id: 'herbes', icone: '🌿', nom: 'Herbes' },
   { id: 'collection', icone: '📕', nom: 'Pokédex' },
-  { id: 'debug', icone: '🛠️', nom: 'Debug' },
+  { id: 'debug', icone: '⚙️', nom: 'Réglages' },
 ];
 
 type Props = { actif: Onglet; onChange: (o: Onglet) => void; pastilleHerbes?: number };

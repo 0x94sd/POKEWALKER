@@ -1,8 +1,11 @@
 // Sprite d'un Pokémon avec animation de saut optionnelle et étoile si shiny.
 import { Image } from 'expo-image';
-import { useEffect, useRef } from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { urlSprite } from '../pokemon';
+import { urlSprite, type StyleSprite } from '../pokemon';
+
+/** Style de sprite choisi dans les réglages, partagé par toute l'app. */
+export const StyleSpriteContext = createContext<StyleSprite>('defaut');
 
 type Props = {
   id: number;
@@ -15,6 +18,7 @@ type Props = {
 
 export function SpritePokemon({ id, shiny = false, taille = 96, sauter = false, silhouette = false }: Props) {
   const y = useRef(new Animated.Value(0)).current;
+  const style = useContext(StyleSpriteContext);
 
   useEffect(() => {
     if (!sauter) return;
@@ -33,7 +37,7 @@ export function SpritePokemon({ id, shiny = false, taille = 96, sauter = false, 
     <View style={{ width: taille, height: taille }}>
       <Animated.View style={{ flex: 1, transform: [{ translateY: y }] }}>
         <Image
-          source={{ uri: urlSprite(id, shiny) }}
+          source={{ uri: urlSprite(id, shiny, style) }}
           style={[styles.img, silhouette && styles.silhouette]}
           contentFit="contain"
           cachePolicy="disk"

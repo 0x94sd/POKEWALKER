@@ -4,8 +4,9 @@ import { getEspece } from './pokemon';
 import {
   CHANCE_OEUF, COUT_FOUILLE, PAS_PAR_XP, XP_CAPTURE, avancerOeufs, creerOeuf, fouillesDispo, nouvelUid,
   resultatLancer, tirerBuissons, tirerRencontre, type OptionsTirage,
+  bonusCaptureCompagnon, caresser, multXp, nourrir, pause, soinsApresMarche, soinsDe,
 } from './regles';
-import type { Oeuf, PokemonCapture, ResultatLancer, Sauvegarde } from './types';
+import type { Oeuf, PokemonCapture, ResultatLancer, Sauvegarde, Soins } from './types';
 
 export type Action =
   | { type: 'charger'; sauvegarde: Sauvegarde }
@@ -23,6 +24,8 @@ export type Action =
   | { type: 'debugDonnerOeuf' }
   | { type: 'debugEclore' }
   | { type: 'basculerForcerShiny' }
+  | { type: 'soigner'; soin: 'nourrir' | 'caresser' | 'pause' }
+  | { type: 'choisirStyleSprite'; style: string }
   | { type: 'debugForcer'; champ: 'meteoForcee' | 'lieuForce' | 'frequentationForcee'; valeur: string | null }
   | { type: 'reinitialiser'; sauvegarde: Sauvegarde };
 
@@ -37,9 +40,26 @@ export type Etat = {
 
 export const etatInitial = (s: Sauvegarde): Etat => ({ s, charge: false, dernierLancer: null, oeufTrouve: false });
 
-function avecXpCompagnon(s: Sauvegarde, xp: number): PokemonCapture[] {
-  if (!s.compagnonUid || xp <= 0) return s.collection;
-  return s.collection.map((p) => (p.uid === s.compagnonUid ? { ...p, xp: p.xp + xp } : p));
+/** Donne de l'XP au compagnon (modulée par son humeur) et, s'il y a eu des pas, fait évoluer ses jauges. */
+function avecXpCompagnon(s: Sauvegarde, xp: number, pas = 0): PokemonCapture[] {
+  if (!s.compagnonUid || (xp <= 0 && pas <= 0)) return s.collection;
+  return s.collection.map((p) => {
+    if (p.uid !== s.compagnonUid) return p;
+    const soins = soinsDe(p);
+    return { ...p, xp: p.xp + xp * multXp(soins), soins: pas > 0 ? soinsApresMarche(soins, pas) : soins };
+  });
+}
+
+function modifierSoinsCompagnon(s: Sauvegarde, f: (x: Soins) => Soins): Sauvegarde {
+  return {
+    ...s,
+    collection: s.collection.map((p) => (p.uid === s.compagnonUid ? { ...p, soins: f(soinsDe(p)) } : p)),
+  };
+}
+
+function soinsCompagnon(s: Sauvegarde): Soins | null {
+  const c = s.collection.find((p) => p.uid === s.compagnonUid);
+  return c ? soinsDe(c) : null;
 }
 
 /** Transforme des œufs éclos en Pokémon de la collection. */
@@ -95,7 +115,7 @@ export function reducer(etat: Etat, a: Action): Etat {
         ...s,
         pasTotal: s.pasTotal + pas,
         dernierReleve: a.releve ?? s.dernierReleve,
-        collection: avecXpCompagnon(s, pas / PAS_PAR_XP),
+        collection: avecXpCompagnon(s, pas / PAS_PAR_XP, pas),
       };
       if (pas === 0 || s.oeufs.length === 0) return { ...etat, s: base };
       const { restants, eclos } = avancerOeufs(s.oeufs, pas);
@@ -165,7 +185,8 @@ export function reducer(etat: Etat, a: Action): Etat {
     case 'lancerBall': {
       const r = s.rencontreEnCours;
       if (!r) return etat;
-      const resultat = resultatLancer(getEspece(r.especeId));
+      const soins = soinsCompagnon(s);
+      const resultat = resultatLancer(getEspece(r.especeId), soins ? bonusCaptureCompagnon(soins) : 0);
       const n = (etat.dernierLancer?.n ?? 0) + 1;
       const info = { resultat, especeId: r.especeId, shiny: r.shiny, n };
       const radar = r.source === 'radar';
@@ -232,6 +253,14 @@ export function reducer(etat: Etat, a: Action): Etat {
 
     case 'debugEclore':
       return { ...etat, s: faireEclore(s, [], s.oeufs) };
+
+    case 'soigner': {
+      const f = a.soin === 'nourrir' ? nourrir : a.soin === 'caresser' ? caresser : pause;
+      return { ...etat, s: modifierSoinsCompagnon(s, f) };
+    }
+
+    case 'choisirStyleSprite':
+      return { ...etat, s: { ...s, reglages: { ...s.reglages, styleSprite: a.style } } };
 
     case 'debugForcer':
       return { ...etat, s: { ...s, debug: { ...s.debug, [a.champ]: a.valeur } } };

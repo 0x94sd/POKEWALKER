@@ -17,9 +17,26 @@ export const STARTERS = [1, 4, 7, 25];
 
 const SPRITES = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
 
-/** Sprite par défaut (style jeux récents). Le choix du style par génération viendra plus tard. */
-export function urlSprite(id: number, shiny = false): string {
-  return shiny ? `${SPRITES}/shiny/${id}.png` : `${SPRITES}/${id}.png`;
+export type StyleSprite = 'defaut' | 'rb' | 'cristal' | 'emeraude' | 'platine' | 'nb' | 'showdown' | 'home' | 'artwork';
+
+/** Styles proposés. `shiny: false` = pas de version chromatique, on retombe sur le style par défaut. */
+export const STYLES_SPRITE: Record<StyleSprite, { nom: string; chemin: string; ext: 'png' | 'gif'; shiny: boolean; anime?: boolean }> = {
+  defaut: { nom: 'Classique', chemin: '', ext: 'png', shiny: true },
+  rb: { nom: 'Rouge / Bleu', chemin: 'versions/generation-i/red-blue/transparent', ext: 'png', shiny: false },
+  cristal: { nom: 'Cristal', chemin: 'versions/generation-ii/crystal/transparent', ext: 'png', shiny: true },
+  emeraude: { nom: 'Émeraude', chemin: 'versions/generation-iii/emerald', ext: 'png', shiny: true },
+  platine: { nom: 'Platine', chemin: 'versions/generation-iv/platinum', ext: 'png', shiny: true },
+  nb: { nom: 'Noir / Blanc (animé)', chemin: 'versions/generation-v/black-white/animated', ext: 'gif', shiny: true, anime: true },
+  showdown: { nom: 'Showdown (animé)', chemin: 'other/showdown', ext: 'gif', shiny: true, anime: true },
+  home: { nom: 'HOME (3D)', chemin: 'other/home', ext: 'png', shiny: true },
+  artwork: { nom: 'Artwork officiel', chemin: 'other/official-artwork', ext: 'png', shiny: true },
+};
+
+export function urlSprite(id: number, shiny = false, style: StyleSprite = 'defaut'): string {
+  const st = STYLES_SPRITE[style] ?? STYLES_SPRITE.defaut;
+  const cfg = shiny && !st.shiny ? STYLES_SPRITE.defaut : st;
+  const base = cfg.chemin ? `${SPRITES}/${cfg.chemin}` : SPRITES;
+  return `${base}${shiny ? '/shiny' : ''}/${id}.${cfg.ext}`;
 }
 
 export const NOMS_TYPES: Record<string, string> = {

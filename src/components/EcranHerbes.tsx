@@ -3,7 +3,9 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { getEspece } from '../pokemon';
-import { CHAINE_MAX, COUT_FOUILLE, INFOS_PALIER, bonusChaine, chanceCapture, fouillesDispo } from '../regles';
+import {
+  CHAINE_MAX, COUT_FOUILLE, INFOS_PALIER, bonusCaptureCompagnon, bonusChaine, chanceCapture, fouillesDispo, soinsDe,
+} from '../regles';
 import type { Etat } from '../jeu';
 import type { Sauvegarde } from '../types';
 import { C, R } from '../theme';
@@ -66,6 +68,8 @@ export function EcranHerbes(p: Props) {
   if (r) {
     const e = getEspece(r.especeId);
     const palier = INFOS_PALIER[r.palier];
+    const compagnon = s.collection.find((x) => x.uid === s.compagnonUid);
+    const aide = compagnon ? bonusCaptureCompagnon(soinsDe(compagnon)) : 0;
     return (
       <View style={styles.page}>
         <View style={styles.carte}>
@@ -79,8 +83,9 @@ export function EcranHerbes(p: Props) {
           </Text>
           <SpritePokemon id={e.id} shiny={r.shiny} taille={200} sauter />
           <Text style={styles.info}>
-            Chance de capture : {Math.round(chanceCapture(e) * 100)} % · Lancers : {r.lancers}
+            Chance de capture : {Math.round(chanceCapture(e, aide) * 100)} % · Lancers : {r.lancers}
           </Text>
+          {aide > 0 && <Text style={styles.info}>💖 Ton compagnon t'encourage : +{Math.round(aide * 100)} %</Text>}
           {message && dernierLancer?.resultat === 'echappe' && <Text style={styles.message}>{message}</Text>}
           {r.source === 'radar' && chaine > 0 && <Text style={styles.info}>Si tu le rates, la chaîne de {chaine} est perdue.</Text>}
         </View>
