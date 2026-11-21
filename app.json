@@ -9,7 +9,8 @@
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
-        "NSMotionUsageDescription": "Compter tes pas pour trouver des Pokémon."
+        "NSMotionUsageDescription": "Compter tes pas pour trouver des Pokémon.",
+        "NSLocationWhenInUseUsageDescription": "Adapter les Pokémon rencontrés à la météo et au lieu."
       }
     },
     "android": {

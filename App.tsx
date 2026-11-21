@@ -5,12 +5,14 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AnnonceEclosion } from './src/components/AnnonceEclosion';
 import { BarreOnglets, type Onglet } from './src/components/BarreOnglets';
+import { BandeauContexte } from './src/components/BandeauContexte';
 import { BarrePodometre } from './src/components/BarrePodometre';
 import { EcranCollection } from './src/components/EcranCollection';
 import { EcranCompagnon } from './src/components/EcranCompagnon';
 import { EcranDebug } from './src/components/EcranDebug';
 import { EcranHerbes } from './src/components/EcranHerbes';
 import { EcranStarter } from './src/components/EcranStarter';
+import { useEnvironnement, type Forcages } from './src/hooks/useEnvironnement';
 import { useJeu } from './src/hooks/useJeu';
 import { usePodometre } from './src/hooks/usePodometre';
 import { fouillesDispo } from './src/regles';
@@ -37,12 +39,17 @@ function Jeu() {
   // ===== 2. EFFETS (podomètre) =====
   const onPas = useCallback((pas: number, releve: number) => dispatch({ type: 'ajouterPas', pas, releve }), [dispatch]);
   const statutPodometre = usePodometre({ pret: etat.charge, dernierReleve: s.dernierReleve, onPas });
+  const env = useEnvironnement({
+    meteo: s.debug.meteoForcee,
+    lieu: s.debug.lieuForce,
+    frequentation: s.debug.frequentationForcee,
+  } as Forcages);
 
   // ===== 3. ACTIONS =====
   const actions = {
     choisirStarter: (especeId: number) => dispatch({ type: 'choisirStarter', especeId }),
-    fouiller: () => dispatch({ type: 'fouiller' }),
-    radar: () => dispatch({ type: 'lancerRadar' }),
+    fouiller: () => dispatch({ type: 'fouiller', opts: env.opts }),
+    radar: () => dispatch({ type: 'lancerRadar', opts: env.opts }),
     choisirBuisson: (index: number) => dispatch({ type: 'choisirBuisson', index }),
     quitterRadar: () => dispatch({ type: 'quitterRadar' }),
     renommerCompagnon: (surnom: string) => compagnon && dispatch({ type: 'renommer', uid: compagnon.uid, surnom }),
@@ -52,11 +59,11 @@ function Jeu() {
     definirCompagnon: (uid: string) => dispatch({ type: 'definirCompagnon', uid }),
     ajouterPasDebug: (pas: number) => dispatch({ type: 'ajouterPas', pas }),
     forcerRencontre: () => {
-      dispatch({ type: 'fouiller', gratuit: true });
+      dispatch({ type: 'fouiller', gratuit: true, opts: env.opts });
       setOnglet('herbes');
     },
     forcerRadar: () => {
-      dispatch({ type: 'lancerRadar', gratuit: true });
+      dispatch({ type: 'lancerRadar', gratuit: true, opts: env.opts });
       setOnglet('herbes');
     },
     donnerOeuf: () => dispatch({ type: 'debugDonnerOeuf' }),
@@ -66,6 +73,8 @@ function Jeu() {
       setOnglet('compagnon');
     },
     basculerShiny: () => dispatch({ type: 'basculerForcerShiny' }),
+    forcer: (champ: 'meteoForcee' | 'lieuForce' | 'frequentationForcee', valeur: string | null) =>
+      dispatch({ type: 'debugForcer', champ, valeur }),
     reinitialiser: async () => {
       await effacer();
       dispatch({ type: 'reinitialiser', sauvegarde: { ...sauvegardeVierge(), dernierReleve: Date.now() } });
@@ -104,6 +113,7 @@ function Jeu() {
             s={s}
             dernierLancer={etat.dernierLancer}
             oeufTrouve={etat.oeufTrouve}
+            bandeau={<BandeauContexte contexte={env.contexte} statut={env.statut} onRafraichir={env.rafraichir} />}
             onFouiller={actions.fouiller}
             onRadar={actions.radar}
             onChoisirBuisson={actions.choisirBuisson}
@@ -122,6 +132,7 @@ function Jeu() {
             onDonnerOeuf={actions.donnerOeuf}
             onEclore={actions.eclore}
             onImporter={actions.importer}
+            onForcer={actions.forcer}
             onBasculerShiny={actions.basculerShiny}
             onReinitialiser={actions.reinitialiser}
           />

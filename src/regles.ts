@@ -68,11 +68,14 @@ export type OptionsTirage = {
   multShiny?: number;
   /** Multiplie le poids des paliers rare, très rare et légendaire (1 = normal). */
   multRare?: number;
-  /** Types favorisés (météo, lieu) : leurs espèces pèsent POIDS_TYPE_FAVORI fois plus dans leur palier. */
+  /** Types favorisés par la météo / l'heure : leurs espèces pèsent POIDS_TYPE_FAVORI fois plus dans leur palier. */
   typesFavoris?: string[];
+  /** Types favorisés par un lieu spécial (cimetière, centrale...) : POIDS_TYPE_LIEU fois plus. Cumulable. */
+  typesLieu?: string[];
 };
 
 export const POIDS_TYPE_FAVORI = 3;
+export const POIDS_TYPE_LIEU = 5;
 
 function poidsPalier(p: Palier, multRare: number): number {
   const base = INFOS_PALIER[p].poids;
@@ -91,9 +94,18 @@ export function tirerPalier(alea: Alea = Math.random, multRare = 1): Palier {
   return dispo[0];
 }
 
+/** Poids d'une espèce dans son palier selon les types favorisés. */
+export function poidsEspece(e: EspecePokemon, typesFavoris: string[] = [], typesLieu: string[] = []): number {
+  const meteo = e.types.some((t) => typesFavoris.includes(t)) ? POIDS_TYPE_FAVORI : 1;
+  const lieu = e.types.some((t) => typesLieu.includes(t)) ? POIDS_TYPE_LIEU : 1;
+  return meteo * lieu;
+}
+
 /** Étape 2 : une espèce du palier, les types favorisés pèsent plus lourd. */
-export function tirerEspece(liste: EspecePokemon[], typesFavoris: string[] = [], alea: Alea = Math.random): EspecePokemon {
-  const poids = liste.map((e) => (e.types.some((t) => typesFavoris.includes(t)) ? POIDS_TYPE_FAVORI : 1));
+export function tirerEspece(
+  liste: EspecePokemon[], typesFavoris: string[] = [], typesLieu: string[] = [], alea: Alea = Math.random,
+): EspecePokemon {
+  const poids = liste.map((e) => poidsEspece(e, typesFavoris, typesLieu));
   const total = poids.reduce((a, b) => a + b, 0);
   let x = alea() * total;
   for (let i = 0; i < liste.length; i++) {
@@ -106,7 +118,7 @@ export function tirerEspece(liste: EspecePokemon[], typesFavoris: string[] = [],
 /** Tirage complet en 2 temps : palier, puis Pokémon dans ce palier. */
 export function tirerRencontre(opts: OptionsTirage = {}, alea: Alea = Math.random): Rencontre {
   const palier = tirerPalier(alea, opts.multRare ?? 1);
-  const espece = tirerEspece(PAR_PALIER[palier], opts.typesFavoris, alea);
+  const espece = tirerEspece(PAR_PALIER[palier], opts.typesFavoris, opts.typesLieu, alea);
   return {
     especeId: espece.id,
     palier,

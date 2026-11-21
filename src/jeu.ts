@@ -23,6 +23,7 @@ export type Action =
   | { type: 'debugDonnerOeuf' }
   | { type: 'debugEclore' }
   | { type: 'basculerForcerShiny' }
+  | { type: 'debugForcer'; champ: 'meteoForcee' | 'lieuForce' | 'frequentationForcee'; valeur: string | null }
   | { type: 'reinitialiser'; sauvegarde: Sauvegarde };
 
 export type Etat = {
@@ -231,6 +232,9 @@ export function reducer(etat: Etat, a: Action): Etat {
 
     case 'debugEclore':
       return { ...etat, s: faireEclore(s, [], s.oeufs) };
+
+    case 'debugForcer':
+      return { ...etat, s: { ...s, debug: { ...s.debug, [a.champ]: a.valeur } } };
 
     case 'basculerForcerShiny':
       return { ...etat, s: { ...s, debug: { ...s.debug, forcerShiny: !s.debug.forcerShiny } } };

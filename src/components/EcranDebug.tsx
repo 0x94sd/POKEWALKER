@@ -5,6 +5,13 @@ import type { Sauvegarde } from '../types';
 import { C, R } from '../theme';
 import { Bouton } from './Bouton';
 import { CarteSauvegarde } from './CarteSauvegarde';
+import { ChoixChips } from './ChoixChips';
+import { FREQUENTATIONS, LIEUX, METEOS } from '../environnement';
+
+type ChampForcage = 'meteoForcee' | 'lieuForce' | 'frequentationForcee';
+const OPT_METEO = Object.entries(METEOS).map(([valeur, m]) => ({ valeur, libelle: `${m.icone} ${m.nom}` }));
+const OPT_LIEU = Object.entries(LIEUX).map(([valeur, l]) => ({ valeur, libelle: `${l.icone} ${l.nom}` }));
+const OPT_FREQ = Object.entries(FREQUENTATIONS).map(([valeur, f]) => ({ valeur, libelle: f.nom }));
 
 type Props = {
   s: Sauvegarde;
@@ -15,6 +22,7 @@ type Props = {
   onEclore: () => void;
   onBasculerShiny: () => void;
   onImporter: (s: Sauvegarde) => void;
+  onForcer: (champ: ChampForcage, valeur: string | null) => void;
   onReinitialiser: () => void;
 };
 
@@ -54,6 +62,16 @@ export function EcranDebug(p: Props) {
             <Bouton titre={`Tout éclore (${s.oeufs.length})`} desactive={s.oeufs.length === 0} onPress={p.onEclore} />
           </View>
         </View>
+      </View>
+
+      <View style={styles.carte}>
+        <Text style={styles.titre}>Simuler météo et lieu</Text>
+        <Text style={styles.petit}>Météo</Text>
+        <ChoixChips options={OPT_METEO} valeur={s.debug.meteoForcee} onChange={(v) => p.onForcer('meteoForcee', v)} />
+        <Text style={styles.petit}>Lieu</Text>
+        <ChoixChips options={OPT_LIEU} valeur={s.debug.lieuForce} onChange={(v) => p.onForcer('lieuForce', v)} />
+        <Text style={styles.petit}>Fréquentation</Text>
+        <ChoixChips options={OPT_FREQ} valeur={s.debug.frequentationForcee} onChange={(v) => p.onForcer('frequentationForcee', v)} />
       </View>
 
       <CarteSauvegarde s={s} onImporter={p.onImporter} />

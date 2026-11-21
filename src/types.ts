@@ -89,5 +89,8 @@ export type Sauvegarde = {
   };
   debug: {
     forcerShiny: boolean;
+    meteoForcee: string | null;
+    lieuForce: string | null;
+    frequentationForcee: string | null;
   };
 };

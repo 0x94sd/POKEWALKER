@@ -24,6 +24,9 @@ Vision : découverte, liberté. **Zéro microtransaction, aucune limite artifici
 | `src/pokemon.ts` | Accès Pokédex, starters, URL sprites, noms/couleurs des types |
 | `src/data/pokedex.ts` | **Généré**, 151 espèces (nom FR, types, captureRate, légendaire, éclosion, évolution) |
 | `src/regles.ts` | Règles pures : fouilles, paliers de rareté, tirage 2 temps, shiny, capture, fuite, XP/niveau |
+| `src/environnement.ts` | Règles pures météo (codes WMO -> types), jour/nuit, lieux (tags OSM -> types), fréquentation (bâtiments -> bonus rares) |
+| `src/services/` | Réseau : `meteo.ts` (Open-Meteo, cache 30 min), `lieux.ts` (Overpass OSM, cache 30 j par case de 250 m), `reseau.ts` (fetch + délai + cache) |
+| `src/hooks/useEnvironnement.ts` | Position (premier plan) + météo + lieu, rafraîchi à l'ouverture et toutes les 10 min ; forçages debug |
 | `src/jeu.ts` | Reducer pur : toutes les actions du jeu (état -> nouvel état) |
 | `src/sauvegarde.ts` | AsyncStorage : charger / enregistrer / normaliser / effacer |
 | `src/exportSauvegarde.ts` | Export/import texte `PKW1.` + base64(JSON UTF-8) |
@@ -41,6 +44,10 @@ Règle : logique de jeu pure dans `src/` (testable sans React), affichage dans `
 - Capture : `0.15 + 0.75 * captureRate/255`. Fuite après échec : `0.05 + 0.15 * (1 - captureRate/255)`. Poké Balls illimitées.
 - Poké Radar : coûte 1 fouille, 3 buissons ; secousse 1 = commun/peu commun, 2 = rare, 3 = très rare/légendaire ; scintille = shiny. Capture au radar = chaîne +1 ; fuite, abandon ou quitter le radar = chaîne à 0. Bonus chaîne (max 40) : shiny x(1+c/8), rares x(1+0.05c)
 - Œufs : 10 % par fouille, formes de base non légendaires, `eclosion * 128` pas, tous incubent en même temps, sans limite. Éclosion annoncée par une fenêtre (même app fermée)
+- Météo (façon GO) : soleil Feu/Plante/Sol, partiel Normal/Roche, couvert Fée/Combat/Poison, brouillard Ténèbres/Spectre, pluie Eau/Électrik/Insecte, neige Glace/Acier, orage Électrik/Eau/Dragon, vent ≥30 km/h Dragon/Vol/Psy. Espèce favorisée x3 dans son palier
+- Nuit (21h-6h, hors ligne) : Spectre/Ténèbres/Poison x3
+- Lieux OSM : cimetière Spectre, électrique Électrik, eau Eau, forêt Insecte/Plante, parc Plante/Normal, industrie Poison/Acier, roche Roche/Sol, campagne Normal/Plante, sport Combat, culte Psy, pompiers Feu, glace Glace, aéroport Vol. Espèce favorisée x5 (cumulable avec météo)
+- Fréquentation (bâtiments à 300 m) : <5 isolé rares x2, <40 calme x1.4, sinon x1
 - Compagnon : +1 XP / 10 pas, +25 XP par capture. Niveau n = 10·(n-1)² XP cumulée, max 100.
 
 ## Vérifs avant de rendre la main
@@ -49,7 +56,7 @@ npx tsc --noEmit
 EXPO_OFFLINE=1 CI=1 npx expo export --platform ios --output-dir /tmp/export   # vérifie que Metro bundle
 ```
 
-## État (lot 2, nov. 2026)
+## État (lot 3, nov. 2026)
 Fait :
 - Projet Expo SDK 58 recréé (le dépôt GitHub était vide), découpé en composants
 - Podomètre en direct + rattrapage au retour dans l'app, sauvegarde locale auto
@@ -63,8 +70,13 @@ Lot 2 :
 - Poké Radar 3 buissons avec chaîne, œufs (incubation, éclosion, annonce), surnom du compagnon (tap sur le nom)
 - Export/import de sauvegarde (copier, partager, importer depuis le presse-papiers), debug œufs + radar
 
+Lot 3 :
+- Météo Open-Meteo, jour/nuit, lieux spéciaux OSM, fréquentation -> rares ; bandeau des conditions sur l'écran Herbes (tap = rafraîchir)
+- Debug : simuler météo / lieu / fréquentation
+- Localisation premier plan seulement (« Toujours » = arrière-plan impossible dans Expo Go iOS, nécessiterait un dev build)
+- Non testé en réel depuis l'env Claude (Open-Meteo / Overpass bloqués) : à valider sur l'iPhone
+
 ## Roadmap
-**Lot 3** : météo Open-Meteo + localisation (types favorisés selon météo et lieu), lieux spéciaux OSM (cimetière -> Spectre, centrale -> Électrik...), plus de rares dans les endroits peu fréquentés
 **Lot 4** : jauges tamagotchi (faim / bonheur / énergie), interactions compagnon, choix du style de sprites par génération + sprites animés Showdown
 **Lot 5+** : niveaux/IV/stats/attaques façon jeux principaux, combats (`@smogon/calc` + `@pkmn/data`, MIT à vérifier), arènes Kanto, Conseil 4, échanges par QR code
 **Hors Expo Go** (dev build nécessaire, à valider avant) : widget écran d'accueil / verrouillage

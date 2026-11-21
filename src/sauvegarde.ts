@@ -19,7 +19,7 @@ export function sauvegardeVierge(): Sauvegarde {
     oeufs: [],
     aAnnoncer: [],
     stats: { fouilles: 0, captures: 0, fuites: 0, shinies: 0, eclosions: 0, meilleureChaine: 0 },
-    debug: { forcerShiny: false },
+    debug: { forcerShiny: false, meteoForcee: null, lieuForce: null, frequentationForcee: null },
   };
 }
 
