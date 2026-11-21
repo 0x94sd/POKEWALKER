@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { AnnonceEclosion } from './src/components/AnnonceEclosion';
 import { BarreOnglets, type Onglet } from './src/components/BarreOnglets';
 import { BarrePodometre } from './src/components/BarrePodometre';
 import { EcranCollection } from './src/components/EcranCollection';
@@ -15,6 +16,7 @@ import { usePodometre } from './src/hooks/usePodometre';
 import { fouillesDispo } from './src/regles';
 import { effacer, sauvegardeVierge } from './src/sauvegarde';
 import { C } from './src/theme';
+import type { Sauvegarde } from './src/types';
 
 export default function App() {
   return (
@@ -30,6 +32,7 @@ function Jeu() {
   const [onglet, setOnglet] = useState<Onglet>('compagnon');
   const s = etat.s;
   const compagnon = s.collection.find((p) => p.uid === s.compagnonUid) ?? null;
+  const aAnnoncer = s.aAnnoncer.length > 0 ? (s.collection.find((p) => p.uid === s.aAnnoncer[0]) ?? null) : null;
 
   // ===== 2. EFFETS (podomètre) =====
   const onPas = useCallback((pas: number, releve: number) => dispatch({ type: 'ajouterPas', pas, releve }), [dispatch]);
@@ -39,6 +42,11 @@ function Jeu() {
   const actions = {
     choisirStarter: (especeId: number) => dispatch({ type: 'choisirStarter', especeId }),
     fouiller: () => dispatch({ type: 'fouiller' }),
+    radar: () => dispatch({ type: 'lancerRadar' }),
+    choisirBuisson: (index: number) => dispatch({ type: 'choisirBuisson', index }),
+    quitterRadar: () => dispatch({ type: 'quitterRadar' }),
+    renommerCompagnon: (surnom: string) => compagnon && dispatch({ type: 'renommer', uid: compagnon.uid, surnom }),
+    annonceVue: () => dispatch({ type: 'annonceVue' }),
     lancer: () => dispatch({ type: 'lancerBall' }),
     abandonner: () => dispatch({ type: 'abandonnerRencontre' }),
     definirCompagnon: (uid: string) => dispatch({ type: 'definirCompagnon', uid }),
@@ -46,6 +54,16 @@ function Jeu() {
     forcerRencontre: () => {
       dispatch({ type: 'fouiller', gratuit: true });
       setOnglet('herbes');
+    },
+    forcerRadar: () => {
+      dispatch({ type: 'lancerRadar', gratuit: true });
+      setOnglet('herbes');
+    },
+    donnerOeuf: () => dispatch({ type: 'debugDonnerOeuf' }),
+    eclore: () => dispatch({ type: 'debugEclore' }),
+    importer: (nouvelle: Sauvegarde) => {
+      dispatch({ type: 'reinitialiser', sauvegarde: { ...nouvelle, dernierReleve: Date.now() } });
+      setOnglet('compagnon');
     },
     basculerShiny: () => dispatch({ type: 'basculerForcerShiny' }),
     reinitialiser: async () => {
@@ -80,12 +98,16 @@ function Jeu() {
         <BarrePodometre pasTotal={s.pasTotal} pasDepenses={s.pasDepenses} statut={statutPodometre} />
       </View>
       <View style={styles.contenu}>
-        {onglet === 'compagnon' && <EcranCompagnon s={s} compagnon={compagnon} />}
+        {onglet === 'compagnon' && <EcranCompagnon s={s} compagnon={compagnon} onRenommer={actions.renommerCompagnon} />}
         {onglet === 'herbes' && (
           <EcranHerbes
             s={s}
             dernierLancer={etat.dernierLancer}
+            oeufTrouve={etat.oeufTrouve}
             onFouiller={actions.fouiller}
+            onRadar={actions.radar}
+            onChoisirBuisson={actions.choisirBuisson}
+            onQuitterRadar={actions.quitterRadar}
             onLancer={actions.lancer}
             onAbandonner={actions.abandonner}
           />
@@ -96,6 +118,10 @@ function Jeu() {
             s={s}
             onAjouterPas={actions.ajouterPasDebug}
             onForcerRencontre={actions.forcerRencontre}
+            onForcerRadar={actions.forcerRadar}
+            onDonnerOeuf={actions.donnerOeuf}
+            onEclore={actions.eclore}
+            onImporter={actions.importer}
             onBasculerShiny={actions.basculerShiny}
             onReinitialiser={actions.reinitialiser}
           />
@@ -105,9 +131,10 @@ function Jeu() {
         <BarreOnglets
           actif={onglet}
           onChange={setOnglet}
-          pastilleHerbes={s.rencontreEnCours ? 1 : fouillesDispo(s.pasTotal, s.pasDepenses)}
+          pastilleHerbes={s.rencontreEnCours || s.radar ? 1 : fouillesDispo(s.pasTotal, s.pasDepenses)}
         />
       </SafeAreaView>
+      <AnnonceEclosion pokemon={aAnnoncer} onFermer={actions.annonceVue} />
     </SafeAreaView>
   );
 }

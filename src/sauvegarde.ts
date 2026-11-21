@@ -6,7 +6,7 @@ const CLE = 'pokewalker.sauvegarde.v1';
 
 export function sauvegardeVierge(): Sauvegarde {
   return {
-    version: 1,
+    version: 2,
     pasTotal: 0,
     pasDepenses: 0,
     dernierReleve: null,
@@ -14,7 +14,11 @@ export function sauvegardeVierge(): Sauvegarde {
     collection: [],
     vus: {},
     rencontreEnCours: null,
-    stats: { fouilles: 0, captures: 0, fuites: 0, shinies: 0 },
+    radar: null,
+    chaineRadar: 0,
+    oeufs: [],
+    aAnnoncer: [],
+    stats: { fouilles: 0, captures: 0, fuites: 0, shinies: 0, eclosions: 0, meilleureChaine: 0 },
     debug: { forcerShiny: false },
   };
 }
@@ -27,11 +31,14 @@ export function normaliser(brut: unknown): Sauvegarde {
   return {
     ...base,
     ...s,
-    version: 1,
+    version: 2,
     stats: { ...base.stats, ...(s.stats ?? {}) },
     debug: { ...base.debug, ...(s.debug ?? {}) },
     collection: Array.isArray(s.collection) ? s.collection : [],
     vus: s.vus && typeof s.vus === 'object' ? s.vus : {},
+    oeufs: Array.isArray(s.oeufs) ? s.oeufs : [],
+    aAnnoncer: Array.isArray(s.aAnnoncer) ? s.aAnnoncer : [],
+    chaineRadar: typeof s.chaineRadar === 'number' ? s.chaineRadar : 0,
   };
 }
 

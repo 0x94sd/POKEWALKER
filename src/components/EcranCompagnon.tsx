@@ -1,13 +1,16 @@
 // Écran du compagnon : sprite, niveau, XP, stats rapides.
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { COULEURS_TYPES, NOMS_TYPES, getEspece } from '../pokemon';
 import { PAS_PAR_XP, niveauDepuisXp, progressionNiveau, xpPourNiveau } from '../regles';
 import type { PokemonCapture, Sauvegarde } from '../types';
 import { C, R } from '../theme';
 import { Jauge } from './Jauge';
+import { ListeOeufs } from './ListeOeufs';
 import { SpritePokemon } from './SpritePokemon';
 
-export function EcranCompagnon({ s, compagnon }: { s: Sauvegarde; compagnon: PokemonCapture }) {
+type Props = { s: Sauvegarde; compagnon: PokemonCapture; onRenommer: (surnom: string) => void };
+
+export function EcranCompagnon({ s, compagnon, onRenommer }: Props) {
   const e = getEspece(compagnon.especeId);
   const niv = niveauDepuisXp(compagnon.xp);
   const xp = Math.floor(compagnon.xp);
@@ -20,7 +23,13 @@ export function EcranCompagnon({ s, compagnon }: { s: Sauvegarde; compagnon: Pok
         <View style={styles.scene}>
           <SpritePokemon id={e.id} shiny={compagnon.shiny} taille={180} sauter />
         </View>
-        <Text style={styles.nom}>{compagnon.surnom ?? e.nom}</Text>
+        <Pressable
+          onPress={() =>
+            Alert.prompt('Surnom', `Laisse vide pour revenir à « ${e.nom} »`, onRenommer, 'plain-text', compagnon.surnom ?? '')
+          }
+        >
+          <Text style={styles.nom}>{compagnon.surnom ?? e.nom} ✏️</Text>
+        </Pressable>
         <Text style={styles.niveau}>Niv. {niv}</Text>
         <View style={styles.types}>
           {e.types.map((t) => (
@@ -38,12 +47,16 @@ export function EcranCompagnon({ s, compagnon }: { s: Sauvegarde; compagnon: Pok
         <Text style={styles.astuce}>+1 XP tous les {PAS_PAR_XP} pas, bonus à chaque capture</Text>
       </View>
 
+      <ListeOeufs oeufs={s.oeufs} />
+
       <View style={styles.carte}>
         <Text style={styles.titreBloc}>Ton aventure</Text>
         <Stat nom="Fouilles" val={s.stats.fouilles} />
         <Stat nom="Captures" val={s.stats.captures} />
         <Stat nom="Fuites" val={s.stats.fuites} />
         <Stat nom="Shiny" val={s.stats.shinies} />
+        <Stat nom="Œufs éclos" val={s.stats.eclosions} />
+        <Stat nom="Meilleure chaîne radar" val={s.stats.meilleureChaine} />
         <Stat nom="Espèces capturées" val={`${especesCapturees} / 151`} />
       </View>
     </ScrollView>

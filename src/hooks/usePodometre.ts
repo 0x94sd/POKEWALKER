@@ -21,6 +21,11 @@ export function usePodometre({ pret, dernierReleve, onPas }: Options): StatutPod
   const onPasRef = useRef(onPas);
   onPasRef.current = onPas;
 
+  // Suit la sauvegarde (import, remise à zéro) : le prochain rattrapage part du bon relevé.
+  useEffect(() => {
+    releveRef.current = dernierReleve;
+  }, [dernierReleve]);
+
   useEffect(() => {
     if (!pret) return;
     releveRef.current = dernierReleve;

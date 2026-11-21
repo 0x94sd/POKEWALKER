@@ -4,16 +4,23 @@ import { INFOS_PALIER, PALIERS, especesDuPalier } from '../regles';
 import type { Sauvegarde } from '../types';
 import { C, R } from '../theme';
 import { Bouton } from './Bouton';
+import { CarteSauvegarde } from './CarteSauvegarde';
 
 type Props = {
   s: Sauvegarde;
   onAjouterPas: (n: number) => void;
   onForcerRencontre: () => void;
+  onForcerRadar: () => void;
+  onDonnerOeuf: () => void;
+  onEclore: () => void;
   onBasculerShiny: () => void;
+  onImporter: (s: Sauvegarde) => void;
   onReinitialiser: () => void;
 };
 
-export function EcranDebug({ s, onAjouterPas, onForcerRencontre, onBasculerShiny, onReinitialiser }: Props) {
+export function EcranDebug(p: Props) {
+  const { s, onAjouterPas, onForcerRencontre, onBasculerShiny, onReinitialiser } = p;
+  const occupe = !!s.rencontreEnCours || !!s.radar;
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.carte}>
@@ -28,15 +35,28 @@ export function EcranDebug({ s, onAjouterPas, onForcerRencontre, onBasculerShiny
       <View style={styles.carte}>
         <Text style={styles.titre}>Rencontres</Text>
         <Bouton
-          titre={s.rencontreEnCours ? 'Rencontre déjà en cours' : 'Forcer une rencontre (gratuite)'}
-          desactive={!!s.rencontreEnCours}
+          titre={occupe ? 'Rencontre / radar déjà en cours' : 'Forcer une rencontre (gratuite)'}
+          desactive={occupe}
           onPress={onForcerRencontre}
         />
+        <Bouton titre="Forcer le Poké Radar (gratuit)" desactive={occupe} secondaire couleur={C.herbeFonce} onPress={p.onForcerRadar} />
         <View style={styles.ligne}>
           <Text style={styles.txt}>Forcer le shiny</Text>
           <Switch value={s.debug.forcerShiny} onValueChange={onBasculerShiny} />
         </View>
       </View>
+
+      <View style={styles.carte}>
+        <Text style={styles.titre}>Œufs</Text>
+        <View style={styles.rangee}>
+          <View style={{ flex: 1 }}><Bouton titre="Donner un œuf" onPress={p.onDonnerOeuf} /></View>
+          <View style={{ flex: 1 }}>
+            <Bouton titre={`Tout éclore (${s.oeufs.length})`} desactive={s.oeufs.length === 0} onPress={p.onEclore} />
+          </View>
+        </View>
+      </View>
+
+      <CarteSauvegarde s={s} onImporter={p.onImporter} />
 
       <View style={styles.carte}>
         <Text style={styles.titre}>Paliers de rareté</Text>

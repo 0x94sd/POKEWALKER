@@ -11,7 +11,7 @@ Vision : découverte, liberté. **Zéro microtransaction, aucune limite artifici
 
 ## Stack
 - Expo **SDK 58** + TypeScript (React Native 0.88, React 19.3)
-- Libs (toutes incluses dans Expo Go) : `expo-sensors` (Pedometer), `@react-native-async-storage/async-storage`, `expo-image` (cache disque des sprites), `expo-haptics`, `react-native-safe-area-context`
+- Libs (toutes incluses dans Expo Go) : `expo-sensors` (Pedometer), `@react-native-async-storage/async-storage`, `expo-image` (cache disque des sprites), `expo-haptics`, `react-native-safe-area-context`, `expo-clipboard`, `expo-location`
 - Ajouter une lib : `npx expo install <paquet>` (jamais `npm install` direct). Aucun module natif hors Expo Go sans prévenir.
 - Données Pokémon : générées depuis PokéAPI par `node scripts/genererPokedex.mjs 151` -> `src/data/pokedex.ts` (hors ligne).
 - Sprites : `raw.githubusercontent.com/PokeAPI/sprites`, mis en cache disque par expo-image.
@@ -26,6 +26,7 @@ Vision : découverte, liberté. **Zéro microtransaction, aucune limite artifici
 | `src/regles.ts` | Règles pures : fouilles, paliers de rareté, tirage 2 temps, shiny, capture, fuite, XP/niveau |
 | `src/jeu.ts` | Reducer pur : toutes les actions du jeu (état -> nouvel état) |
 | `src/sauvegarde.ts` | AsyncStorage : charger / enregistrer / normaliser / effacer |
+| `src/exportSauvegarde.ts` | Export/import texte `PKW1.` + base64(JSON UTF-8) |
 | `src/hooks/useJeu.ts` | Branche le reducer sur React + sauvegarde auto (debounce 500 ms) |
 | `src/hooks/usePodometre.ts` | Pas en direct + rattrapage des pas faits app fermée (historique iOS 7 j) |
 | `src/components/` | Écrans (Starter, Compagnon, Herbes, Collection, Debug) + briques (Sprite, Jauge, Bouton, Onglets, BarrePodometre) |
@@ -35,8 +36,11 @@ Règle : logique de jeu pure dans `src/` (testable sans React), affichage dans `
 ## Règles de jeu actuelles
 - 250 pas = 1 fouille. `fouillesDispo = floor((pasTotal - pasDepenses) / 250)`
 - Paliers selon captureRate : commun ≥150 (60 %), peu commun 75-149 (25 %), rare 45-74 (10 %), très rare <45 (4 %), légendaire/fabuleux (1 %)
+- Forcés en très rare (`FORCES_TRES_RARE`) : lignées starters, Lokhlass, Évoli + évolutions, fossiles, Minidraco/Draco/Dracolosse
 - Tirage en 2 temps : palier puis espèce au hasard dans le palier. Shiny 1/512.
 - Capture : `0.15 + 0.75 * captureRate/255`. Fuite après échec : `0.05 + 0.15 * (1 - captureRate/255)`. Poké Balls illimitées.
+- Poké Radar : coûte 1 fouille, 3 buissons ; secousse 1 = commun/peu commun, 2 = rare, 3 = très rare/légendaire ; scintille = shiny. Capture au radar = chaîne +1 ; fuite, abandon ou quitter le radar = chaîne à 0. Bonus chaîne (max 40) : shiny x(1+c/8), rares x(1+0.05c)
+- Œufs : 10 % par fouille, formes de base non légendaires, `eclosion * 128` pas, tous incubent en même temps, sans limite. Éclosion annoncée par une fenêtre (même app fermée)
 - Compagnon : +1 XP / 10 pas, +25 XP par capture. Niveau n = 10·(n-1)² XP cumulée, max 100.
 
 ## Vérifs avant de rendre la main
@@ -45,7 +49,7 @@ npx tsc --noEmit
 EXPO_OFFLINE=1 CI=1 npx expo export --platform ios --output-dir /tmp/export   # vérifie que Metro bundle
 ```
 
-## État (lot 1, nov. 2026)
+## État (lot 2, nov. 2026)
 Fait :
 - Projet Expo SDK 58 recréé (le dépôt GitHub était vide), découpé en composants
 - Podomètre en direct + rattrapage au retour dans l'app, sauvegarde locale auto
@@ -55,8 +59,11 @@ Fait :
 - Compagnon : niveau + barre d'XP + stats
 - Debug : +250/+1000/+10000 pas, forcer rencontre, forcer shiny, voir les paliers, tout effacer
 
+Lot 2 :
+- Poké Radar 3 buissons avec chaîne, œufs (incubation, éclosion, annonce), surnom du compagnon (tap sur le nom)
+- Export/import de sauvegarde (copier, partager, importer depuis le presse-papiers), debug œufs + radar
+
 ## Roadmap
-**Lot 2** : mode 3 buissons (Poké Radar), œufs qui éclosent à la distance, export/import de sauvegarde (copier/coller texte)
 **Lot 3** : météo Open-Meteo + localisation (types favorisés selon météo et lieu), lieux spéciaux OSM (cimetière -> Spectre, centrale -> Électrik...), plus de rares dans les endroits peu fréquentés
 **Lot 4** : jauges tamagotchi (faim / bonheur / énergie), interactions compagnon, choix du style de sprites par génération + sprites animés Showdown
 **Lot 5+** : niveaux/IV/stats/attaques façon jeux principaux, combats (`@smogon/calc` + `@pkmn/data`, MIT à vérifier), arènes Kanto, Conseil 4, échanges par QR code

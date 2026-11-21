@@ -22,6 +22,26 @@ export type Rencontre = {
   palier: Palier;
   /** Nombre de Poké Balls lancées sur cette rencontre. */
   lancers: number;
+  /** D'où vient la rencontre (le radar gère une chaîne). */
+  source?: 'herbes' | 'radar';
+};
+
+/** Un des 3 buissons du Poké Radar. */
+export type Buisson = {
+  rencontre: Rencontre;
+  /** Force de la secousse : 1 faible, 2 moyenne, 3 forte (indique la rareté). */
+  intensite: 1 | 2 | 3;
+  /** Le buisson scintille : Pokémon chromatique caché dedans. */
+  brille: boolean;
+};
+
+export type Oeuf = {
+  uid: string;
+  especeId: number;
+  shiny: boolean;
+  pasRequis: number;
+  pasFaits: number;
+  trouveLe: number;
 };
 
 /** Un Pokémon capturé, dans la collection du joueur. */
@@ -39,7 +59,7 @@ export type ResultatLancer = 'capture' | 'echappe' | 'fuite';
 
 /** Tout ce qui est sauvegardé sur le téléphone. */
 export type Sauvegarde = {
-  version: 1;
+  version: number;
   /** Total de pas comptés depuis le début (podomètre + bonus debug). */
   pasTotal: number;
   /** Pas déjà dépensés en fouilles. */
@@ -52,11 +72,20 @@ export type Sauvegarde = {
   /** id d'espèce -> nombre de fois vu. */
   vus: Record<number, number>;
   rencontreEnCours: Rencontre | null;
+  /** Poké Radar actif : 3 buissons à choisir. */
+  radar: { buissons: Buisson[] } | null;
+  /** Captures consécutives au radar (booste rares et shiny). */
+  chaineRadar: number;
+  oeufs: Oeuf[];
+  /** uid des Pokémon éclos pas encore annoncés au joueur. */
+  aAnnoncer: string[];
   stats: {
     fouilles: number;
     captures: number;
     fuites: number;
     shinies: number;
+    eclosions: number;
+    meilleureChaine: number;
   };
   debug: {
     forcerShiny: boolean;
